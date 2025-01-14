@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedding and Query Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0fdf4; /* Light green background */
+            color: #064e3b; /* Dark green text */
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #065f46;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #d1fae5; /* Very light green */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            background-color: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #059669;
+        }
+        .file-list {
+            margin-top: 10px;
+            list-style-type: none;
+            padding: 0;
+        }
+        .file-list li {
+            background-color: #a7f3d0;
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .output-box {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0fdf4;
+            border: 1px solid #34d399;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Embedding and Query Chat</h1>
+    <div class="container">
+        <h2>1. Load Files</h2>
+        <input type="file" id="fileInput" multiple>
+        <ul id="fileList" class="file-list"></ul>
+        <h2>2. Generate Embeddings</h2>
+        <button id="embeddingButton" class="button">Generate Embeddings</button>
+        <h2>3. Ask a Question</h2>
+        <input type="text" id="queryInput" placeholder="Type your question here..." style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #34d399; border-radius: 5px;">
+        <button id="queryButton" class="button">Submit</button>
+        <h2>Answer</h2>
+        <div id="responseBox" class="output-box"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        // Handle file selection
+        document.getElementById("fileInput").addEventListener("change", function (event) {
+            const files = event.target.files;
+            const fileList = document.getElementById("fileList");
+
+            for (const file of files) {
+                selectedFiles.push(file.path);
+                const li = document.createElement("li");
+                li.textContent = file.name;
+                fileList.appendChild(li);
+            }
+        });
+
+        // Handle embedding generation
+        document.getElementById("embeddingButton").addEventListener("click", async function () {
+            const fileInput = document.getElementById("fileInput");
+            const files = fileInput.files;
+
+            if (files.length === 0) {
+                alert("Please select files first.");
+                return;
+            }
+
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append("files", file);
+            }
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/generate_embeddings", {
+                    method: "POST",
+                    body: formData,
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                } else {
+                    alert("Error: " + result.error);
+                }
+            } catch (error) {
+                alert("Error generating embeddings: " + error.message);
+            }
+        });
+        // Handle query submission
+        document.getElementById("queryButton").addEventListener("click", async function () {
+            const query = document.getElementById("queryInput").value;
+            if (!query) {
+                alert("Please type a question first.");
+                return;
+            }
+            try {
+                const response = await fetch("http://127.0.0.1:5000/query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query }),
+                });
+                const result = await response.json();
+                document.getElementById("responseBox").textContent = result.answer;
+            } catch (error) {
+                alert("Error retrieving answer: " + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
