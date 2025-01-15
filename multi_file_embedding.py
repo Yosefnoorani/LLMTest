@@ -6,7 +6,7 @@ from llama_index.core import SimpleDirectoryReader
 # ========================
 # 1. Set up OpenAI API
 # ========================
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = 'YOUR_KEY'
 
 # ========================
 # 2. Load Documents
@@ -68,6 +68,42 @@ def save_embeddings_to_json(embeddings, file_path):
 # ========================
 # Main Process
 # ========================
+# def embedding_files_multiple_dirs(directory_paths, output_file="embeddings_with_overlap_llama.json"):
+#     """
+#     Process multiple directories of files and save their embeddings.
+#
+#     Parameters:
+#     - directory_paths (list): List of directories containing files.
+#     - output_file (str): Path to save the embeddings JSON file.
+#     """
+#     all_embeddings = []
+#
+#     for directory_path in directory_paths:
+#         if not os.path.exists(directory_path):
+#             print(f"Directory {directory_path} does not exist. Skipping.")
+#             continue
+#
+#         # Load documents
+#         documents = load_documents(directory_path)
+#
+#         # Process each document
+#         for document in documents:
+#             # Split document into chunks with overlap
+#             chunks = chunk_document_with_overlap(document.text, chunk_size=200, overlap=10)
+#             # Generate embeddings for each chunk
+#             embeddings = generate_embeddings_with_llama(chunks)
+#
+#             # Add document name to each embedding
+#             for embedding in embeddings:
+#                 embedding["document_name"] = document.doc_id
+#
+#             all_embeddings.extend(embeddings)
+#
+#     # Save all embeddings to a JSON file
+#     save_embeddings_to_json(all_embeddings, output_file)
+#
+#     print(f"Embeddings saved to {output_file}.")
+
 def embedding_files_multiple_dirs(directory_paths, output_file="embeddings_with_overlap_llama.json"):
     """
     Process multiple directories of files and save their embeddings.
@@ -105,7 +141,7 @@ def embedding_files_multiple_dirs(directory_paths, output_file="embeddings_with_
     print(f"Embeddings saved to {output_file}.")
 
 # Example usage:
-embedding_files_multiple_dirs([r"C:\\Users\\yosef\\Downloads\\Portal", r"C:\Users\yosef\Downloads\Inention"])
+# embedding_files_multiple_dirs([r"C:\\Users\\yosef\\Downloads\\Portal", r"C:\Users\yosef\Downloads\Inention"])
 # "C:\Users\yosef\Downloads\INTENTION BEYOND - V2.pdf"
 
 import sys

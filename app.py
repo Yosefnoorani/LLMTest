@@ -1,76 +1,92 @@
 from flask import Flask, request, jsonify
-import subprocess
-from flask_cors import CORS
 import os
+import json
+from werkzeug.utils import secure_filename
+from multi_file_embedding import embedding_files_multiple_dirs
+from chat_query_embedding import query_embedding
+from flask_cors import CORS
+
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
-app.debug = True
+CORS(app)
 
-# ========================
-# 1. Run Embedding for Files
-# ========================
-UPLOAD_FOLDER = "uploaded_files"
+UPLOAD_FOLDER = './uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Ensure the upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# @app.route('/generate_embeddings', methods=['POST'])
+# def generate_embeddings():
+#     try:
+#         # Save uploaded files to the server
+#         files = request.files.getlist('files')
+#         if not files:
+#             return jsonify({"error": "No files provided."}), 400
+#
+#         file_paths = []
+#         for file in files:
+#             filename = secure_filename(file.filename)
+#             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#             file.save(file_path)
+#             file_paths.append(file_path)
+#
+#         # Generate embeddings
+#         output_file = os.path.join(app.config['UPLOAD_FOLDER'], 'embeddings_with_overlap_llama.json')
+#         embedding_files_multiple_dirs([app.config['UPLOAD_FOLDER']], output_file=output_file)
+#
+#         return jsonify({"message": "Embeddings generated successfully.", "output_file": output_file}), 200
+#
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
 @app.route('/generate_embeddings', methods=['POST'])
-def run_embedding():
+def generate_embeddings():
     try:
-        if 'files' not in request.files:
-            return jsonify({'error': 'No files part in the request'}), 400
-
+        # קבלת הקבצים שהועלו
         files = request.files.getlist('files')
-        file_paths = []
+        if not files:
+            return jsonify({"error": "No files provided."}), 400
 
+        # יצירת רשימה לשמירת הנתיבים
+        file_paths = []
         for file in files:
-            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+            # שם קובץ מאובטח
+            filename = secure_filename(file.filename)
+            # נתיב יעד
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            # שמירת הקובץ בנתיב
             file.save(file_path)
             file_paths.append(file_path)
 
-        if not file_paths:
-            return jsonify({'error': 'No files uploaded'}), 400
+        print(f"Uploaded files saved at: {file_paths}")
 
-        # עטיפת נתיבי הקבצים במרכאות
-        embedding_script = 'multi_file_embedding.py'
-        command = ['python', embedding_script] + [f'"{file}"' for file in file_paths]
+        # קריאה לפונקציית יצירת ה-embeddings
+        # במקום לעבור רק על תיקייה אחת, נוודא שעוברים על כל הקבצים שהועלו
+        output_file = os.path.join(app.config['UPLOAD_FOLDER'], 'embeddings_with_overlap_llama.json')
+        embedding_files_multiple_dirs([os.path.dirname(file_path) for file_path in file_paths], output_file=output_file)
 
-        # שימוש ב-subprocess להרצת הסקריפט
-        result = subprocess.run(command, text=True, capture_output=True)
-
-        if result.returncode != 0:
-            error_message = result.stderr or "Unknown error occurred."
-            return jsonify({'error': f"Embedding script failed: {error_message}"}), 500
-
-        return jsonify({'message': 'Embeddings created successfully.'}), 200
+        return jsonify({"message": "Embeddings generated successfully.", "output_file": output_file}), 200
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
-# ========================
-# 2. Query Embedding
-# ========================
 @app.route('/query', methods=['POST'])
-def query_embedding():
+def query():
     try:
         data = request.get_json()
-        question = data.get('question', '')
+        if not data or 'query' not in data:
+            return jsonify({"error": "Query parameter missing."}), 400
 
-        if not question:
-            return jsonify({'error': 'No question provided'}), 400
+        query_text = data['query']
+        response = query_embedding(query=query_text)
 
-        # Call the query script with the question as an argument
-        query_script = 'chat_query_embedding.py'
-        command = ['python', query_script, '--query', question]
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        return jsonify({"answer": response}), 200
 
-        # Parse the output and send the response back
-        return jsonify({'response': result.stdout.strip()}), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-# ========================
-# 3. Run the Flask App
-# ========================
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
