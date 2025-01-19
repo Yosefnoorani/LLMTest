@@ -3,12 +3,14 @@ import json
 from llama_index.core import VectorStoreIndex, StorageContext
 from llama_index.core.data_structs import Node
 from llama_index.llms.openai import OpenAI
-# from llama_index.embeddings.openai import OpenAIEmbedding
+from get_secret_openai import get_secret
 
 # ========================
 # 1. Set up OpenAI API
 # ========================
-os.environ["OPENAI_API_KEY"] = 'YOUR_KEY'
+# os.environ["OPENAI_API_KEY"] = 'YOUR_KEY'
+
+os.environ["OPENAI_API_KEY"] = get_secret()
 
 # ========================
 # 2. Define the OpenAI-based LLM
@@ -16,9 +18,6 @@ os.environ["OPENAI_API_KEY"] = 'YOUR_KEY'
 def load_openai_llm():
     """Load the OpenAI GPT model"""
     return OpenAI(model="gpt-4o-mini")  # Change to "gpt-3.5-turbo" if needed.
-
-
-
 
 
 # ========================
@@ -79,13 +78,13 @@ def save_index(index, file_path):
     index.storage_context.persist(persist_dir=file_path)
 
 
-def query_embedding(query = "What are the key points in these documents?"):
+def query_embedding(query = "What are the key points in these documents?", json_embedding= r"uploads\embeddings_with_overlap_llama.json"):
 
 
     llm = load_openai_llm()
 
     # Path to the JSON file with embeddings
-    json_file_path = r"uploads\embeddings_with_overlap_llama.json"
+    json_file_path = json_embedding
 
     # Load embeddings
     embedding_nodes = load_embeddings_from_json(json_file_path)

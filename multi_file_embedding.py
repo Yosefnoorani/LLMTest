@@ -2,11 +2,14 @@ import os
 import json
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import SimpleDirectoryReader
+from get_secret_openai import get_secret
 
 # ========================
 # 1. Set up OpenAI API
 # ========================
-os.environ["OPENAI_API_KEY"] = 'YOUR_KEY'
+# os.environ["OPENAI_API_KEY"] = 'YOUR_KEY'
+
+os.environ["OPENAI_API_KEY"] = get_secret()
 
 # ========================
 # 2. Load Documents
@@ -144,24 +147,3 @@ def embedding_files_multiple_dirs(directory_paths, output_file="embeddings_with_
 # embedding_files_multiple_dirs([r"C:\\Users\\yosef\\Downloads\\Portal", r"C:\Users\yosef\Downloads\Inention"])
 # "C:\Users\yosef\Downloads\INTENTION BEYOND - V2.pdf"
 
-import sys
-
-
-if __name__ == "__main__":
-    try:
-        file_paths = sys.argv[1:]  # Get file paths passed as arguments
-        print(f"Received file paths: {file_paths}")
-
-        if not file_paths:
-            raise ValueError("No file paths provided.")
-
-        # Continue with your embedding logic...
-        print("Embedding process started...")
-        # Placeholder for actual embedding process
-        for file in file_paths:
-            print(f"Processing file: {file}")
-        print("Embedding process completed.")
-
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        sys.exit(1)
